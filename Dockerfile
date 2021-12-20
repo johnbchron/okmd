@@ -1,72 +1,71 @@
+
 FROM ubuntu:20.04
+
+# Ports
+EXPOSE 80
 EXPOSE 8080
 
+# Environmentals
+ENV TZ=America/Chicago
+ENV MJPG="input_uvc.so -r HD -d /dev/video0"
 
-# Override this for your location
-ENV TZ=Australia/Brisbane
-
+# APT packages
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y cmake libjpeg8-dev g++ unzip wget git ffmpeg \
         python2 virtualenv python3-dev
 
+# Install MJPG
 RUN cd /tmp/ && \
     wget https://github.com/jacksonliam/mjpg-streamer/archive/master.zip && \
     unzip master
-
 RUN cd /tmp/mjpg-streamer-master/mjpg-streamer-experimental/ && \
     make && \
     make install
 
-EXPOSE 5000
+# Cleanup
+RUN rm -Rf /tmp/*
 
 ARG tag=master
 
 WORKDIR /opt/octoprint
 
-# Cleanup
-RUN rm -Rf /tmp/*
-
-#Create an octoprint user
+# Create an octoprint user
 RUN useradd -ms /bin/bash octoprint && adduser octoprint dialout
 RUN chown octoprint:octoprint /opt/octoprint
 USER octoprint
 
-#This fixes issues with the volume command setting wrong permissions
+# This fixes issues with the volume command setting wrong permissions
 RUN mkdir /home/octoprint/.octoprint
 
-#Install Octoprint
+# Install Octoprint
 RUN git clone --branch $tag https://github.com/foosel/OctoPrint.git /opt/octoprint \
   && virtualenv venv \
     && ./venv/bin/pip install .
 
+# Install Octoprint plugins
 RUN /opt/octoprint/venv/bin/python -m pip install \
 https://github.com/FormerLurker/Octolapse/archive/master.zip \
 https://github.com/AlexVerrico/Octoprint-Display-ETA/archive/master.zip \
 https://github.com/1r0b1n0/OctoPrint-Tempsgraph/archive/master.zip \
 https://github.com/marian42/octoprint-preheat/archive/master.zip \
-https://github.com/jneilliii/OctoPrint-TasmotaMQTT/archive/master.zip \
 https://github.com/mikedmor/OctoPrint_MultiCam/archive/master.zip \
 https://github.com/AliceGrey/OctoprintKlipperPlugin/archive/master.zip \
 https://github.com/jneilliii/OctoPrint-TabOrder/archive/master.zip \
 https://github.com/OctoPrint/OctoPrint-MQTT/archive/master.zip \
-https://github.com/fraschetti/Octoslack/archive/master.zip \
-https://github.com/MoonshineSG/OctoPrint-MultiColors/archive/master.zip \
-https://github.com/OllisGit/OctoPrint-PrintJobHistory/releases/latest/download/master.zip \
-https://github.com/Kragrathea/OctoPrint-PrettyGCode/archive/master.zip
+https://github.com/Kragrathea/OctoPrint-PrettyGCode/archive/master.zip \
+https://github.com/birkbjo/OctoPrint-Themeify/archive/master.zip \
+https://github.com/cesarvandevelde/OctoPrint-M73Progress/archive/master.zip \
+https://github.com/vitormhenrique/OctoPrint-Enclosure/archive/master.zip
 
-
+# Establish config dir
 VOLUME /home/octoprint/.octoprint
 
 
-### Klipper setup ###
-
+# Klipper setup
 USER root
-
 RUN apt-get install -y sudo
-
 COPY klippy.sudoers /etc/sudoers.d/klippy
-
 RUN useradd -ms /bin/bash klippy
 
 # This is to allow the install script to run without error
