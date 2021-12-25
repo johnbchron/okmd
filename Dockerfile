@@ -1,19 +1,19 @@
 
 FROM ubuntu:20.04
 
-# Ports
-EXPOSE 80
-EXPOSE 8080
-
-# Environmentals
-ENV TZ=America/Chicago
-ENV MJPG="input_uvc.so -r HD -d /dev/video0"
-
 # APT packages
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y cmake libjpeg8-dev g++ unzip wget git ffmpeg \
         python2 virtualenv python3-dev
+
+# Ports
+EXPOSE 5000
+EXPOSE 8080
+
+# Environmentals
+ENV TZ=America/Chicago
+ENV MJPG="input_uvc.so -r HD -d /dev/video0"
 
 # Install MJPG
 RUN cd /tmp/ && \
@@ -60,7 +60,6 @@ https://github.com/vitormhenrique/OctoPrint-Enclosure/archive/master.zip
 
 # Establish config dir
 VOLUME /home/octoprint/.octoprint
-
 
 # Klipper setup
 USER root
